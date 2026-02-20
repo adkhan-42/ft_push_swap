@@ -219,6 +219,19 @@ Rotate A so the smallest element is on top, completing the sort.
 
 ---
 
+## 2. Run the Program
+
+Execute push_swap by passing a list of integers. It accepts numbers as separate arguments or as a single quoted string. It will output the calculated sequence of operations to stdout.
+Makefile Targets
+
+    make / make all — Compile the executable.
+
+    make clean — Remove object files.
+
+    make fclean — Remove object files and the executable.
+
+    make re — Rebuild the project from scratch.
+
 ## Recommendations for Improvement
 
 ### Current Performance Estimate (500 elements)
@@ -268,3 +281,22 @@ Instead of always reducing A to exactly 3, consider reducing to **5** and implem
 | + Dynamic chunk sizing            | ~4,500–5,200                  |
 | + Greedy best-of-two-ends         | ~4,200–4,800                  |
 | All optimizations combined        | **~4,000–4,500**              |
+
+
+##AI Usage Statement
+
+    AI was used to support brainstorming, gather ideas, structure concepts, and generate test scripts for this project. No core logic coding was completed with the assistance of AI, maintaining strict adherence to the 42 school academic integrity policies.
+
+##Resources
+
+push_swap visualizer [Link](https://github.com/o-reo/push_swap_visualizer)
+linked list [Link](https://visualgo.net/en/list)
+push_swap [Game](https://vscza.itch.io/push-swap)
+sorting algo [Selection Sort](https://www.geeksforgeeks.org/c/c-program-for-selection-sort/)
+push_swap [Sample](https://github.com/arommers/push_swap)
+Sorting Algorithms [Cheatsheet](https://www.bigocheatsheet.com/)
+Sorting Algorithms [Animations](https://www.toptal.com/developers/sorting-algorithms)
+Turk Sort1 [Explained](https://pure-forest.medium.com/push-swap-turk-algorithm-explained-in-6-steps-4c6650a458c0)
+Turk Sort2 [Explained](https://medium.com/@jamierobertdawson/push-swap-the-least-amount-of-moves-with-two-stacks-d1e76a71789a)
+Grrokking Algorithims [Link](https://www.manning.com/books/grokking-algorithms?source=post_page-----4c6650a458c0---------------------------------------)
+
