@@ -285,7 +285,7 @@ Instead of always reducing A to exactly 3, consider reducing to **5** and implem
 
 ##AI Usage Statement
 
-    AI was used to support brainstorming, gather ideas, structure concepts, and generate test scripts for this project. No core logic coding was completed with the assistance of AI, maintaining strict adherence to the 42 school academic integrity policies.
+AI was used to support brainstorming, gather ideas, structure concepts, and generate test scripts for this project. No core logic coding was completed with the assistance of AI, maintaining strict adherence to the 42 school academic integrity policies.
 
 ##Resources
 
