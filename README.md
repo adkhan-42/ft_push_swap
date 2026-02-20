@@ -1,3 +1,5 @@
+_This project has been created as part of the 42 curriculum by adkhan._
+
 # push_swap
 
 A 42 School project that sorts a stack of integers using a limited set of operations, outputting the sequence of moves to `stdout`. This implementation uses the **Turk Sort** algorithm — a cost-optimized strategy that minimizes total operations by calculating the cheapest element to move at each step.
