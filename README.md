@@ -547,6 +547,13 @@ echo -e "  🎉 ALL TESTS PASSED SUCCESSFULLY!                     "
 echo -e "  📊 AVERAGE MOVES: ${GREEN}$AVERAGE${RESET} (for $STACK_SIZE elements)"
 echo "========================================================"
 
+
+
+
+
+
+
+
 ## AI Usage Statement
 
 AI was used to support brainstorming, gather ideas, structure concepts, and generate test scripts for this project. No core logic coding was completed with the assistance of AI, maintaining strict adherence to the 42 school academic integrity policies.
