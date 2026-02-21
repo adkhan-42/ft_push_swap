@@ -300,6 +300,7 @@ To use the tester, ensure you have the following in the root of your repository:
 * **Leak Detection:** Runs every test through Valgrind to ensure strict memory management (no leaks, no segfaults).
 * **Move Limits:** Automatically fails if the operation count exceeds the specified `MAX_MOVES` threshold.
 * **Randomized Stress Testing:** Generates random arrays using `shuf` to calculate the average move count over a specified number of runs.
+* Using any editor you can change, then number of tests, the minimum threshold and the number of elements to be sorted.
 
 ### Usage
 
@@ -308,252 +309,6 @@ To use the tester, ensure you have the following in the root of your repository:
 3. Make it executable: `chmod +x tester.sh`
 4. Run the tester: `./tester.sh`
 
-<details>
-<summary><b>Click to expand the `tester.sh` script</b></summary>
-
-```bash
-#!/bin/bash
-
-# Configuration
-TEST_COUNT=50       # How many times to loop
-STACK_SIZE=500      # How many numbers to sort
-MAX_MOVES=5500      # Maximum allowed moves (5500 for full points on 500 nums)
-CHECKER="./checker_linux" # Path to your checker binary
-
-# Colors
-GREEN="\033[32m"
-RED="\033[31m"
-RESET="\033[0m"
-
-echo "========================================================"
-echo "  PUSH_SWAP ULTIMATE TESTER                             "
-echo "  Running $TEST_COUNT tests with $STACK_SIZE numbers    "
-echo "  Max moves allowed: $MAX_MOVES                         "
-echo "========================================================"
-
-# Check if checker exists
-if [ ! -f "$CHECKER" ]; then
-    echo -e "${RED}Error: $CHECKER not found.${RESET}"
-    exit 1
-fi
-chmod +x "$CHECKER"
-
-echo "========================================================"
-echo "  TESTING EDGE CASES                                    "
-echo "========================================================"
-
-# --- Edge Case 1: Already Sorted ---
-echo -n "Test 0a (Already Sorted):       "
-ARG_SORTED=$(seq 1 $STACK_SIZE | tr '\n' ' ')
-MOVES_SORTED=$(./push_swap $ARG_SORTED | wc -l)
-valgrind --leak-check=full --errors-for-leak-kinds=all --error-exitcode=42 ./push_swap $ARG_SORTED > /dev/null 2>&1
-LEAK_SORTED=$?
-
-if [ "$MOVES_SORTED" -ne 0 ]; then
-    echo -e "${RED}KO (Moves: $MOVES_SORTED, expected 0)${RESET}"
-    exit 1
-elif [ $LEAK_SORTED -eq 42 ]; then
-    echo -e "${RED}KO (Memory Leak Detected)${RESET}"
-    exit 1
-else
-    echo -e "${GREEN}OK${RESET} (0 moves, no leaks)"
-fi
-
-# --- Edge Case 2: Duplicates ---
-echo -n "Test 0b (Duplicates):           "
-ARG_DUP="42 15 8 42 9"
-ERR_OUT=$(./push_swap $ARG_DUP 2>&1 >/dev/null)
-valgrind --leak-check=full --errors-for-leak-kinds=all --error-exitcode=42 ./push_swap $ARG_DUP > /dev/null 2>&1
-LEAK_DUP=$?
-
-if [[ ! "$ERR_OUT" =~ "Error" ]]; then
-    echo -e "${RED}KO (Did not print 'Error' to stderr)${RESET}"
-    exit 1
-elif [ $LEAK_DUP -eq 42 ]; then
-    echo -e "${RED}KO (Memory Leak Detected during error handling)${RESET}"
-    exit 1
-else
-    echo -e "${GREEN}OK${RESET} (Proper error handling, no leaks)"
-fi
-
-# --- Edge Case 3: Invalid Input (Letters/Symbols) ---
-echo -n "Test 0c (Invalid Input):        "
-ARG_INV="42 15 a 9"
-ERR_OUT_INV=$(./push_swap $ARG_INV 2>&1 >/dev/null)
-valgrind --leak-check=full --errors-for-leak-kinds=all --error-exitcode=42 ./push_swap $ARG_INV > /dev/null 2>&1
-LEAK_INV=$?
-
-if [[ ! "$ERR_OUT_INV" =~ "Error" ]]; then
-    echo -e "${RED}KO (Did not print 'Error' to stderr)${RESET}"
-    exit 1
-elif [ $LEAK_INV -eq 42 ]; then
-    echo -e "${RED}KO (Memory Leak Detected during error handling)${RESET}"
-    exit 1
-else
-    echo -e "${GREEN}OK${RESET} (Proper error handling, no leaks)"
-fi
-
-# --- Edge Case 4: Integer Overflow/Underflow ---
-echo -n "Test 0d (INT Limits):           "
-ARG_OVER="42 2147483648 -2147483649 9"
-ERR_OUT_OVER=$(./push_swap $ARG_OVER 2>&1 >/dev/null)
-valgrind --leak-check=full --errors-for-leak-kinds=all --error-exitcode=42 ./push_swap $ARG_OVER > /dev/null 2>&1
-LEAK_OVER=$?
-
-if [[ ! "$ERR_OUT_OVER" =~ "Error" ]]; then
-    echo -e "${RED}KO (Did not print 'Error' to stderr)${RESET}"
-    exit 1
-elif [ $LEAK_OVER -eq 42 ]; then
-    echo -e "${RED}KO (Memory Leak Detected during error handling)${RESET}"
-    exit 1
-else
-    echo -e "${GREEN}OK${RESET} (Proper error handling, no leaks)"
-fi
-
-# --- Edge Case 5: Single Quoted String ---
-echo -n "Test 0e (Single Quoted String): "
-ARG_STR="42 15 8 9 21"
-CHECKER_OUT_STR=$(./push_swap "$ARG_STR" | $CHECKER "$ARG_STR" 2>&1)
-valgrind --leak-check=full --errors-for-leak-kinds=all --error-exitcode=42 ./push_swap "$ARG_STR" > /dev/null 2>&1
-LEAK_STR=$?
-
-if [ "$CHECKER_OUT_STR" != "OK" ]; then
-    echo -e "${RED}KO (Did not sort correctly or checker failed)${RESET}"
-    exit 1
-elif [ $LEAK_STR -eq 42 ]; then
-    echo -e "${RED}KO (Memory Leak Detected)${RESET}"
-    exit 1
-else
-    echo -e "${GREEN}OK${RESET} (Parsed, sorted, no leaks)"
-fi
-
-# --- Edge Case 6: Empty String ---
-echo -n "Test 0f (Empty String):         "
-./push_swap "" > /dev/null 2>&1
-EXIT_CODE=$?
-valgrind --leak-check=full --errors-for-leak-kinds=all --error-exitcode=42 ./push_swap "" > /dev/null 2>&1
-LEAK_EMPTY=$?
-
-if [ $EXIT_CODE -gt 128 ]; then
-    echo -e "${RED}KO (Crash/Segfault Detected)${RESET}"
-    exit 1
-elif [ $LEAK_EMPTY -eq 42 ]; then
-    echo -e "${RED}KO (Memory Leak Detected)${RESET}"
-    exit 1
-else
-    echo -e "${GREEN}OK${RESET} (Handled empty string, no leaks or crashes)"
-fi
-
-# --- Edge Case 7: Reverse Order (Worst Case) ---
-echo -n "Test 0g (Reverse Order):        "
-ARG_REV=$(seq $STACK_SIZE -1 1 | tr '\n' ' ')
-CHECKER_OUT_REV=$(./push_swap $ARG_REV | $CHECKER $ARG_REV 2>&1)
-MOVES_REV=$(./push_swap $ARG_REV | wc -l)
-valgrind --leak-check=full --errors-for-leak-kinds=all --error-exitcode=42 ./push_swap $ARG_REV > /dev/null 2>&1
-LEAK_REV=$?
-
-if [ "$CHECKER_OUT_REV" != "OK" ]; then
-    echo -e "${RED}KO (Not sorted correctly)${RESET}"
-    exit 1
-elif [ $LEAK_REV -eq 42 ]; then
-    echo -e "${RED}KO (Memory Leak Detected)${RESET}"
-    exit 1
-elif [ "$MOVES_REV" -gt "$MAX_MOVES" ]; then
-    echo -e "${RED}KO ($MOVES_REV moves exceeds $MAX_MOVES limit)${RESET}"
-    exit 1
-else
-    echo -e "${GREEN}OK${RESET} ($MOVES_REV moves, sorted, no leaks)"
-fi
-
-# --- Edge Case 8: All Negative Numbers ---
-echo -n "Test 0h (All Negative):         "
-ARG_NEG=$(seq -10000 -1 | shuf -n $STACK_SIZE | tr '\n' ' ')
-CHECKER_OUT_NEG=$(./push_swap $ARG_NEG | $CHECKER $ARG_NEG 2>&1)
-MOVES_NEG=$(./push_swap $ARG_NEG | wc -l)
-valgrind --leak-check=full --errors-for-leak-kinds=all --error-exitcode=42 ./push_swap $ARG_NEG > /dev/null 2>&1
-LEAK_NEG=$?
-
-if [ "$CHECKER_OUT_NEG" != "OK" ]; then
-    echo -e "${RED}KO (Not sorted correctly)${RESET}"
-    exit 1
-elif [ $LEAK_NEG -eq 42 ]; then
-    echo -e "${RED}KO (Memory Leak Detected)${RESET}"
-    exit 1
-elif [ "$MOVES_NEG" -gt "$MAX_MOVES" ]; then
-    echo -e "${RED}KO ($MOVES_NEG moves exceeds $MAX_MOVES limit)${RESET}"
-    exit 1
-else
-    echo -e "${GREEN}OK${RESET} ($MOVES_NEG moves, sorted, no leaks)"
-fi
-
-echo "========================================================"
-echo "  STARTING RANDOM TESTS                                 "
-echo "========================================================"
-
-TOTAL_MOVES=0
-
-for ((i=1; i<=TEST_COUNT; i++))
-do
-    ARG=$(seq -10000 10000 | shuf -n $STACK_SIZE | tr '\n' ' ')
-
-    # 1. Check Memory Leaks
-    valgrind --leak-check=full --errors-for-leak-kinds=all --error-exitcode=42 ./push_swap $ARG > /dev/null 2>&1
-    if [ $? -eq 42 ]; then
-        VALGRIND_RES="${RED}KO${RESET}"
-        LEAK_FOUND=1
-    else
-        VALGRIND_RES="${GREEN}OK${RESET}"
-        LEAK_FOUND=0
-    fi
-
-    # 2. Check Sorting
-    CHECKER_OUT=$(./push_swap $ARG | $CHECKER $ARG 2>&1)
-    if [ "$CHECKER_OUT" == "OK" ]; then
-        CHECKER_RES="${GREEN}OK${RESET}"
-    else
-        CHECKER_RES="${RED}KO${RESET}"
-    fi
-
-    # 3. Count Moves
-    MOVES=$(./push_swap $ARG | wc -l)
-    TOTAL_MOVES=$((TOTAL_MOVES + MOVES))
-    
-    if [ "$MOVES" -gt "$MAX_MOVES" ]; then
-        MOVES_RES="${RED}$MOVES (Too High!)${RESET}"
-        EXCEEDED_MOVES=1
-    else
-        MOVES_RES="${GREEN}$MOVES${RESET}"
-        EXCEEDED_MOVES=0
-    fi
-
-    echo -e "Test $i: Valgrind=$VALGRIND_RES checker_linux=$CHECKER_RES | moves=$MOVES_RES"
-
-    # 4. Halt on failure
-    if [ $LEAK_FOUND -eq 1 ] || [ "$CHECKER_OUT" != "OK" ] || [ $EXCEEDED_MOVES -eq 1 ]; then
-        echo "--------------------------------------------------------"
-        echo -e "${RED}❌ TEST FAILED ON INPUT:${RESET}"
-        if [ $EXCEEDED_MOVES -eq 1 ]; echo -e "Reason: Exceeded maximum moves limit ($MAX_MOVES)"; fi
-        if [ $LEAK_FOUND -eq 1 ]; echo -e "Reason: Memory leak detected"; fi
-        if [ "$CHECKER_OUT" != "OK" ]; echo -e "Reason: Array not sorted correctly"; fi
-        echo "$ARG"
-        exit 1
-    fi
-done
-
-AVERAGE=$((TOTAL_MOVES / TEST_COUNT))
-
-echo "========================================================"
-echo -e "  🎉 ALL TESTS PASSED SUCCESSFULLY!                     "
-echo -e "  📊 AVERAGE MOVES: ${GREEN}$AVERAGE${RESET} (for $STACK_SIZE elements)"
-echo "========================================================"
-
-
-
-
-
-
-
-
 ## AI Usage Statement
 
 AI was used to support brainstorming, gather ideas, structure concepts, and generate test scripts for this project. No core logic coding was completed with the assistance of AI, maintaining strict adherence to the 42 school academic integrity policies.
@@ -561,13 +316,22 @@ AI was used to support brainstorming, gather ideas, structure concepts, and gene
 ## Resources
 
 push_swap visualizer [Link](https://github.com/o-reo/push_swap_visualizer)
+
 linked list [Link](https://visualgo.net/en/list)
+
 push_swap [Game](https://vscza.itch.io/push-swap)
+
 sorting algo [Selection Sort](https://www.geeksforgeeks.org/c/c-program-for-selection-sort/)
+
 push_swap [Sample](https://github.com/arommers/push_swap)
+
 Sorting Algorithms [Cheatsheet](https://www.bigocheatsheet.com/)
+
 Sorting Algorithms [Animations](https://www.toptal.com/developers/sorting-algorithms)
+
 Turk Sort1 [Explained](https://pure-forest.medium.com/push-swap-turk-algorithm-explained-in-6-steps-4c6650a458c0)
+
 Turk Sort2 [Explained](https://medium.com/@jamierobertdawson/push-swap-the-least-amount-of-moves-with-two-stacks-d1e76a71789a)
+
 Grrokking Algorithims [Link](https://www.manning.com/books/grokking-algorithms?source=post_page-----4c6650a458c0---------------------------------------)
 
